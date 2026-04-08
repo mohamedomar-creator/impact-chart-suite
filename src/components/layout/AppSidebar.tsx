@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Activity, GraduationCap, Monitor,
+  LayoutDashboard, Activity, GraduationCap, Clock,
   Users, Calendar, Lightbulb, BarChart3, FileText, Settings
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -10,12 +10,13 @@ import {
   SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import logo from "@/assets/logo.png";
 
 const mainNav = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Activity Tracking", url: "/activities", icon: Activity },
   { title: "Training", url: "/training", icon: GraduationCap },
-  { title: "LMS Monitoring", url: "/lms", icon: Monitor },
+  { title: "Attendance", url: "/attendance", icon: Clock },
   { title: "Team Performance", url: "/team", icon: Users },
   { title: "Monthly Planning", url: "/planning", icon: Calendar },
 ];
@@ -36,13 +37,11 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center flex-shrink-0">
-            <GraduationCap className="h-4 w-4 text-sidebar-primary-foreground" />
-          </div>
+          <img src={logo} alt="United Pharmacy" className="h-8 w-8 rounded-lg object-contain flex-shrink-0" />
           {!collapsed && (
             <div>
-              <h2 className="text-sm font-heading font-semibold text-sidebar-foreground">TalentOps</h2>
-              <p className="text-xs text-sidebar-foreground/60">Management System</p>
+              <h2 className="text-sm font-heading font-semibold text-sidebar-foreground">صيدلية المتحدة</h2>
+              <p className="text-xs text-sidebar-foreground/60">نظام إدارة المواهب</p>
             </div>
           )}
         </div>
