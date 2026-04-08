@@ -50,12 +50,24 @@ export const teamMembers = [
   { id: 5, name: "Nour Ibrahim", role: "HR Partner", avatar: "NI", sessionsDelivered: 6, hoursLogged: 220, productivity: 79, tasksCompleted: 28 },
 ];
 
-export const lmsCourses = [
-  { id: 1, name: "Workplace Safety 2026", enrolled: 120, completed: 98, avgScore: 85, status: "active" },
-  { id: 2, name: "Anti-Harassment Policy", enrolled: 150, completed: 142, avgScore: 91, status: "active" },
-  { id: 3, name: "Excel Advanced", enrolled: 45, completed: 30, avgScore: 78, status: "active" },
-  { id: 4, name: "Time Management", enrolled: 60, completed: 55, avgScore: 82, status: "completed" },
-  { id: 5, name: "Customer Service Excellence", enrolled: 35, completed: 10, avgScore: 0, status: "draft" },
+export interface AttendanceRecord {
+  id: number;
+  name: string;
+  role: string;
+  avatar: string;
+  date: string;
+  checkIn: string | null;
+  checkOut: string | null;
+  hoursWorked: number | null;
+  status: "present" | "late" | "absent" | "leave";
+}
+
+export const attendanceRecords: AttendanceRecord[] = [
+  { id: 1, name: "Sarah Ahmed", role: "L&D Specialist", avatar: "SA", date: "2026-04-08", checkIn: "08:00", checkOut: "16:30", hoursWorked: 8.5, status: "present" },
+  { id: 2, name: "Omar Hassan", role: "Content Developer", avatar: "OH", date: "2026-04-08", checkIn: "08:45", checkOut: "17:00", hoursWorked: 8.25, status: "late" },
+  { id: 3, name: "Layla Mahmoud", role: "Trainer", avatar: "LM", date: "2026-04-08", checkIn: "07:55", checkOut: "16:00", hoursWorked: 8, status: "present" },
+  { id: 4, name: "Ahmed Youssef", role: "LMS Admin", avatar: "AY", date: "2026-04-08", checkIn: null, checkOut: null, hoursWorked: null, status: "absent" },
+  { id: 5, name: "Nour Ibrahim", role: "HR Partner", avatar: "NI", date: "2026-04-08", checkIn: null, checkOut: null, hoursWorked: null, status: "leave" },
 ];
 
 export const monthlyPlan = [
