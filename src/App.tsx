@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Activities from "./pages/Activities";
 import Training from "./pages/Training";
@@ -12,9 +13,40 @@ import Planning from "./pages/Planning";
 import Insights from "./pages/Insights";
 import Analytics from "./pages/Analytics";
 import Reports from "./pages/Reports";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { session, loading } = useAuth();
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><p>جاري التحميل...</p></div>;
+  if (!session) return <Navigate to="/auth" replace />;
+  return <>{children}</>;
+}
+
+function AuthRoute() {
+  const { session, loading } = useAuth();
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><p>جاري التحميل...</p></div>;
+  if (session) return <Navigate to="/" replace />;
+  return <Auth />;
+}
+
+const AppRoutes = () => (
+  <Routes>
+    <Route path="/auth" element={<AuthRoute />} />
+    <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+    <Route path="/activities" element={<ProtectedRoute><Activities /></ProtectedRoute>} />
+    <Route path="/training" element={<ProtectedRoute><Training /></ProtectedRoute>} />
+    <Route path="/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
+    <Route path="/team" element={<ProtectedRoute><TeamPerformance /></ProtectedRoute>} />
+    <Route path="/planning" element={<ProtectedRoute><Planning /></ProtectedRoute>} />
+    <Route path="/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
+    <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+    <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+    <Route path="*" element={<NotFound />} />
+  </Routes>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -22,18 +54,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/activities" element={<Activities />} />
-          <Route path="/training" element={<Training />} />
-          <Route path="/attendance" element={<Attendance />} />
-          <Route path="/team" element={<TeamPerformance />} />
-          <Route path="/planning" element={<Planning />} />
-          <Route path="/insights" element={<Insights />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
