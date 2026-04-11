@@ -6,10 +6,13 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Clock, LogIn, LogOut, UserCheck, UserX, Timer } from "lucide-react";
 import { useState } from "react";
-import { attendanceRecords as initialRecords, teamMembers, type AttendanceRecord } from "@/data/mockData";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const KpiCard = ({ title, value, icon: Icon, subtitle }: { title: string; value: string | number; icon: React.ElementType; subtitle?: string }) => (
   <Card>
@@ -30,97 +33,99 @@ const KpiCard = ({ title, value, icon: Icon, subtitle }: { title: string; value:
 
 function getStatusBadge(status: string) {
   switch (status) {
-    case "present":
-      return <Badge className="bg-success/15 text-success border-success/30">حاضر</Badge>;
-    case "late":
-      return <Badge className="bg-warning/15 text-warning border-warning/30">متأخر</Badge>;
-    case "absent":
-      return <Badge className="bg-destructive/15 text-destructive border-destructive/30">غائب</Badge>;
-    case "leave":
-      return <Badge className="bg-info/15 text-info border-info/30">إجازة</Badge>;
-    default:
-      return <Badge variant="secondary">{status}</Badge>;
+    case "present": return <Badge className="bg-success/15 text-success border-success/30">حاضر</Badge>;
+    case "late": return <Badge className="bg-warning/15 text-warning border-warning/30">متأخر</Badge>;
+    case "absent": return <Badge className="bg-destructive/15 text-destructive border-destructive/30">غائب</Badge>;
+    case "leave": return <Badge className="bg-info/15 text-info border-info/30">إجازة</Badge>;
+    default: return <Badge variant="secondary">{status}</Badge>;
   }
 }
 
-export default function Attendance() {
-  const [records, setRecords] = useState<AttendanceRecord[]>([...initialRecords]);
-  const [checkInOpen, setCheckInOpen] = useState(false);
-  const [checkOutOpen, setCheckOutOpen] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState("");
+type AttendanceRecord = { id: string; name: string; role: string; avatar: string; date: string; check_in: string | null; check_out: string | null; hours_worked: number | null; status: string };
 
+export default function Attendance() {
+  const queryClient = useQueryClient();
   const today = new Date().toISOString().split("T")[0];
   const now = () => new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
-  const todayRecords = records.filter((r) => r.date === today);
-  const presentCount = todayRecords.filter((r) => r.status === "present" || r.status === "late").length;
-  const absentCount = todayRecords.filter((r) => r.status === "absent").length;
-  const lateCount = todayRecords.filter((r) => r.status === "late").length;
-  const avgHours = todayRecords.filter((r) => r.hoursWorked).reduce((sum, r) => sum + (r.hoursWorked || 0), 0) / (presentCount || 1);
+  const [checkInOpen, setCheckInOpen] = useState(false);
+  const [checkOutOpen, setCheckOutOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState("");
+  const [employeeName, setEmployeeName] = useState("");
+  const [employeeRole, setEmployeeRole] = useState("");
 
-  const handleCheckIn = () => {
-    if (!selectedEmployee) { toast.error("اختر موظف أولاً"); return; }
-    const member = teamMembers.find(m => m.name === selectedEmployee);
-    if (!member) return;
+  const { data: records = [], isLoading } = useQuery({
+    queryKey: ["attendance", today],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("attendance_records").select("*").eq("date", today).order("created_at");
+      if (error) throw error;
+      return data as AttendanceRecord[];
+    },
+  });
 
-    const existing = records.find(r => r.name === selectedEmployee && r.date === today);
-    if (existing?.checkIn) { toast.error("هذا الموظف سجل حضور بالفعل"); setCheckInOpen(false); return; }
+  const presentCount = records.filter(r => r.status === "present" || r.status === "late").length;
+  const absentCount = records.filter(r => r.status === "absent").length;
+  const lateCount = records.filter(r => r.status === "late").length;
+  const avgHours = records.filter(r => r.hours_worked).reduce((sum, r) => sum + (r.hours_worked || 0), 0) / (presentCount || 1);
 
-    const time = now();
-    const isLate = time > "08:15";
+  const checkInMut = useMutation({
+    mutationFn: async () => {
+      const name = selectedEmployee || employeeName;
+      if (!name) throw new Error("اختر أو أدخل اسم الموظف");
+      const time = now();
+      const isLate = time > "08:15";
+      const existing = records.find(r => r.name === name);
+      if (existing?.check_in) throw new Error("هذا الموظف سجل حضور بالفعل");
 
-    if (existing) {
-      setRecords(prev => prev.map(r => r.id === existing.id ? { ...r, checkIn: time, status: isLate ? "late" : "present" } as AttendanceRecord : r));
-    } else {
-      setRecords(prev => [...prev, { id: Date.now(), name: member.name, role: member.role, avatar: member.avatar, date: today, checkIn: time, checkOut: null, hoursWorked: null, status: isLate ? "late" : "present" }]);
-    }
-    toast.success(`تم تسجيل حضور ${selectedEmployee} في ${time}`);
-    setSelectedEmployee("");
-    setCheckInOpen(false);
-  };
+      if (existing) {
+        const { error } = await supabase.from("attendance_records").update({ check_in: time, status: isLate ? "late" : "present" }).eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("attendance_records").insert({ name, role: employeeRole || "موظف", avatar: name.split(" ").map(w => w[0]).join("").substring(0, 2).toUpperCase(), date: today, check_in: time, status: isLate ? "late" : "present" });
+        if (error) throw error;
+      }
+      return { name, time };
+    },
+    onSuccess: ({ name, time }) => { queryClient.invalidateQueries({ queryKey: ["attendance"] }); toast.success(`تم تسجيل حضور ${name} في ${time}`); setCheckInOpen(false); setSelectedEmployee(""); setEmployeeName(""); setEmployeeRole(""); },
+    onError: (e: any) => toast.error(e.message),
+  });
 
-  const handleCheckOut = () => {
-    if (!selectedEmployee) { toast.error("اختر موظف أولاً"); return; }
-    const existing = records.find(r => r.name === selectedEmployee && r.date === today);
-    if (!existing?.checkIn) { toast.error("هذا الموظف لم يسجل حضور بعد"); setCheckOutOpen(false); return; }
-    if (existing.checkOut) { toast.error("هذا الموظف سجل انصراف بالفعل"); setCheckOutOpen(false); return; }
+  const checkOutMut = useMutation({
+    mutationFn: async () => {
+      if (!selectedEmployee) throw new Error("اختر الموظف");
+      const existing = records.find(r => r.name === selectedEmployee);
+      if (!existing?.check_in) throw new Error("هذا الموظف لم يسجل حضور بعد");
+      if (existing.check_out) throw new Error("هذا الموظف سجل انصراف بالفعل");
 
-    const time = now();
-    const [inH, inM] = existing.checkIn.split(":").map(Number);
-    const [outH, outM] = time.split(":").map(Number);
-    const hours = Math.round(((outH * 60 + outM) - (inH * 60 + inM)) / 60 * 10) / 10;
+      const time = now();
+      const [inH, inM] = existing.check_in.split(":").map(Number);
+      const [outH, outM] = time.split(":").map(Number);
+      const hours = Math.round(((outH * 60 + outM) - (inH * 60 + inM)) / 60 * 10) / 10;
 
-    setRecords(prev => prev.map(r => r.id === existing.id ? { ...r, checkOut: time, hoursWorked: hours } : r));
-    toast.success(`تم تسجيل انصراف ${selectedEmployee} في ${time} (${hours} ساعة)`);
-    setSelectedEmployee("");
-    setCheckOutOpen(false);
-  };
-
-  // Use today's records if available, else show mock data
-  const displayRecords = todayRecords.length > 0 ? todayRecords : records;
+      const { error } = await supabase.from("attendance_records").update({ check_out: time, hours_worked: hours }).eq("id", existing.id);
+      if (error) throw error;
+      return { name: selectedEmployee, time, hours };
+    },
+    onSuccess: ({ name, time, hours }) => { queryClient.invalidateQueries({ queryKey: ["attendance"] }); toast.success(`تم تسجيل انصراف ${name} في ${time} (${hours} ساعة)`); setCheckOutOpen(false); setSelectedEmployee(""); },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   return (
     <DashboardLayout title="تسجيل الحضور والانصراف" subtitle="متابعة حضور وانصراف فريق العمل">
       <div className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <KpiCard title="الحاضرون اليوم" value={presentCount} icon={UserCheck} subtitle={`من ${displayRecords.length} موظف`} />
+          <KpiCard title="الحاضرون اليوم" value={presentCount} icon={UserCheck} subtitle={`من ${records.length} موظف`} />
           <KpiCard title="الغائبون" value={absentCount} icon={UserX} subtitle="بدون إجازة" />
           <KpiCard title="المتأخرون" value={lateCount} icon={Clock} subtitle="وصول بعد الموعد" />
           <KpiCard title="متوسط ساعات العمل" value={`${avgHours.toFixed(1)} ساعة`} icon={Timer} />
         </div>
 
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-heading">إجراءات سريعة</CardTitle>
-          </CardHeader>
+          <CardHeader className="pb-3"><CardTitle className="text-base font-heading">إجراءات سريعة</CardTitle></CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-3">
-              <Button className="gap-2" onClick={() => setCheckInOpen(true)}>
-                <LogIn className="h-4 w-4" /> تسجيل حضور
-              </Button>
-              <Button variant="outline" className="gap-2" onClick={() => setCheckOutOpen(true)}>
-                <LogOut className="h-4 w-4" /> تسجيل انصراف
-              </Button>
+              <Button className="gap-2" onClick={() => setCheckInOpen(true)}><LogIn className="h-4 w-4" /> تسجيل حضور</Button>
+              <Button variant="outline" className="gap-2" onClick={() => setCheckOutOpen(true)}><LogOut className="h-4 w-4" /> تسجيل انصراف</Button>
             </div>
           </CardContent>
         </Card>
@@ -145,20 +150,22 @@ export default function Attendance() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {displayRecords.map((record) => (
+                {isLoading ? (
+                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">جاري التحميل...</td></tr>
+                ) : records.length === 0 ? (
+                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">لا توجد سجلات حضور لهذا اليوم</td></tr>
+                ) : records.map(record => (
                   <TableRow key={record.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Avatar className="h-7 w-7">
-                          <AvatarFallback className="bg-primary/10 text-primary text-xs">{record.avatar}</AvatarFallback>
-                        </Avatar>
+                        <Avatar className="h-7 w-7"><AvatarFallback className="bg-primary/10 text-primary text-xs">{record.avatar}</AvatarFallback></Avatar>
                         <span className="font-medium text-sm">{record.name}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{record.role}</TableCell>
-                    <TableCell className="text-sm">{record.checkIn || "—"}</TableCell>
-                    <TableCell className="text-sm">{record.checkOut || "—"}</TableCell>
-                    <TableCell className="text-sm">{record.hoursWorked ? `${record.hoursWorked} ساعة` : "—"}</TableCell>
+                    <TableCell className="text-sm">{record.check_in || "—"}</TableCell>
+                    <TableCell className="text-sm">{record.check_out || "—"}</TableCell>
+                    <TableCell className="text-sm">{record.hours_worked ? `${record.hours_worked} ساعة` : "—"}</TableCell>
                     <TableCell>{getStatusBadge(record.status)}</TableCell>
                   </TableRow>
                 ))}
@@ -168,46 +175,40 @@ export default function Attendance() {
         </Card>
       </div>
 
-      {/* Check-In Dialog */}
       <Dialog open={checkInOpen} onOpenChange={setCheckInOpen}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>تسجيل حضور</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>تسجيل حضور</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
-            <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-              <SelectTrigger><SelectValue placeholder="اختر الموظف" /></SelectTrigger>
-              <SelectContent>
-                {teamMembers.map(m => <SelectItem key={m.id} value={m.name}>{m.name} - {m.role}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            {records.length > 0 && (
+              <Select value={selectedEmployee} onValueChange={v => { setSelectedEmployee(v); setEmployeeName(""); }}>
+                <SelectTrigger><SelectValue placeholder="اختر موظف موجود" /></SelectTrigger>
+                <SelectContent>{records.filter(r => !r.check_in).map(r => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}</SelectContent>
+              </Select>
+            )}
+            <div className="space-y-2"><Label>أو أدخل اسم جديد</Label><Input value={employeeName} onChange={e => { setEmployeeName(e.target.value); setSelectedEmployee(""); }} placeholder="اسم الموظف" /></div>
+            <div className="space-y-2"><Label>الدور الوظيفي</Label><Input value={employeeRole} onChange={e => setEmployeeRole(e.target.value)} placeholder="مثال: L&D Specialist" /></div>
             <p className="text-sm text-muted-foreground">الوقت الحالي: <span className="font-medium text-foreground">{now()}</span></p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCheckInOpen(false)}>إلغاء</Button>
-            <Button onClick={handleCheckIn} className="gap-2"><LogIn className="h-4 w-4" /> تسجيل</Button>
+            <Button onClick={() => checkInMut.mutate()} disabled={checkInMut.isPending} className="gap-2"><LogIn className="h-4 w-4" /> تسجيل</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Check-Out Dialog */}
       <Dialog open={checkOutOpen} onOpenChange={setCheckOutOpen}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>تسجيل انصراف</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>تسجيل انصراف</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
               <SelectTrigger><SelectValue placeholder="اختر الموظف" /></SelectTrigger>
-              <SelectContent>
-                {teamMembers.filter(m => records.some(r => r.name === m.name && r.date === today && r.checkIn && !r.checkOut)).map(m => <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>)}
-              </SelectContent>
+              <SelectContent>{records.filter(r => r.check_in && !r.check_out).map(r => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}</SelectContent>
             </Select>
             <p className="text-sm text-muted-foreground">الوقت الحالي: <span className="font-medium text-foreground">{now()}</span></p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCheckOutOpen(false)}>إلغاء</Button>
-            <Button onClick={handleCheckOut} className="gap-2"><LogOut className="h-4 w-4" /> تسجيل</Button>
+            <Button onClick={() => checkOutMut.mutate()} disabled={checkOutMut.isPending} className="gap-2"><LogOut className="h-4 w-4" /> تسجيل</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
