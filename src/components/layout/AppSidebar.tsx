@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Activity, GraduationCap, Clock,
-  Users, Calendar, Lightbulb, BarChart3, FileText, Settings
+  Users, Calendar, Lightbulb, BarChart3, FileText, LogOut
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -10,6 +10,8 @@ import {
   SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/logo.png";
 
 const mainNav = [
@@ -31,7 +33,9 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const { user, signOut } = useAuth();
   const isActive = (path: string) => location.pathname === path;
+  const initials = user?.email?.substring(0, 2).toUpperCase() || "U";
 
   return (
     <Sidebar collapsible="icon">
@@ -88,15 +92,19 @@ export function AppSidebar() {
       <SidebarFooter className="p-4">
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">AD</AvatarFallback>
+            <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">{initials}</AvatarFallback>
           </Avatar>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">Admin User</p>
-              <p className="text-xs text-sidebar-foreground/60 truncate">admin@talentops.com</p>
+              <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.user_metadata?.full_name || user?.email}</p>
+              <p className="text-xs text-sidebar-foreground/60 truncate">{user?.email}</p>
             </div>
           )}
-          {!collapsed && <Settings className="h-4 w-4 text-sidebar-foreground/60" />}
+          {!collapsed && (
+            <Button variant="ghost" size="icon" onClick={signOut} className="text-sidebar-foreground/60 hover:text-destructive">
+              <LogOut className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </SidebarFooter>
     </Sidebar>

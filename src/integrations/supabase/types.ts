@@ -14,16 +14,270 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activities: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date: string
+          duration: number
+          id: string
+          status: string
+          title: string
+          type: string
+          updated_at: string
+          user: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          duration: number
+          id?: string
+          status?: string
+          title: string
+          type: string
+          updated_at?: string
+          user: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          duration?: number
+          id?: string
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          user?: string
+        }
+        Relationships: []
+      }
+      attendance_records: {
+        Row: {
+          avatar: string
+          check_in: string | null
+          check_out: string | null
+          created_at: string
+          created_by: string | null
+          date: string
+          hours_worked: number | null
+          id: string
+          name: string
+          role: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          avatar?: string
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          hours_worked?: number | null
+          id?: string
+          name: string
+          role: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          avatar?: string
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          hours_worked?: number | null
+          id?: string
+          name?: string
+          role?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      monthly_plans: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          planned: string
+          program: string
+          status: string
+          trainer: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          planned: string
+          program: string
+          status?: string
+          trainer: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          planned?: string
+          program?: string
+          status?: string
+          trainer?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          job_role: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          job_role?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          job_role?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      team_members: {
+        Row: {
+          avatar: string
+          created_at: string
+          hours_logged: number | null
+          id: string
+          name: string
+          productivity: number | null
+          role: string
+          sessions_delivered: number | null
+          tasks_completed: number | null
+          updated_at: string
+        }
+        Insert: {
+          avatar?: string
+          created_at?: string
+          hours_logged?: number | null
+          id?: string
+          name: string
+          productivity?: number | null
+          role: string
+          sessions_delivered?: number | null
+          tasks_completed?: number | null
+          updated_at?: string
+        }
+        Update: {
+          avatar?: string
+          created_at?: string
+          hours_logged?: number | null
+          id?: string
+          name?: string
+          productivity?: number | null
+          role?: string
+          sessions_delivered?: number | null
+          tasks_completed?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      training_programs: {
+        Row: {
+          audience: string
+          completed: number
+          completion_rate: number
+          created_at: string
+          created_by: string | null
+          duration: string
+          enrolled: number
+          id: string
+          name: string
+          status: string
+          trainer: string
+          updated_at: string
+        }
+        Insert: {
+          audience: string
+          completed?: number
+          completion_rate?: number
+          created_at?: string
+          created_by?: string | null
+          duration: string
+          enrolled?: number
+          id?: string
+          name: string
+          status?: string
+          trainer: string
+          updated_at?: string
+        }
+        Update: {
+          audience?: string
+          completed?: number
+          completion_rate?: number
+          created_at?: string
+          created_by?: string | null
+          duration?: string
+          enrolled?: number
+          id?: string
+          name?: string
+          status?: string
+          trainer?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "manager" | "team_member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +404,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "manager", "team_member"],
+    },
   },
 } as const
