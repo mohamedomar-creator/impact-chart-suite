@@ -101,10 +101,15 @@ export default function Auth() {
             {googleLoading ? "جاري التحميل..." : "تسجيل الدخول بـ Google"}
           </Button>
 
-          <div className="mt-4 text-center">
-            <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-sm text-primary hover:underline">
+          <div className="mt-4 text-center space-y-2">
+            <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-sm text-primary hover:underline block w-full">
               {isLogin ? "ليس لديك حساب؟ سجل الآن" : "لديك حساب بالفعل؟ سجل دخول"}
             </button>
+            {isLogin && (
+              <a href="/forgot-password" className="text-sm text-muted-foreground hover:text-primary hover:underline block">
+                نسيت كلمة المرور؟
+              </a>
+            )}
           </div>
         </CardContent>
       </Card>
