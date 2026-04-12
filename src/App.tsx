@@ -14,6 +14,8 @@ import Insights from "./pages/Insights";
 import Analytics from "./pages/Analytics";
 import Reports from "./pages/Reports";
 import Auth from "./pages/Auth";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +37,8 @@ function AuthRoute() {
 const AppRoutes = () => (
   <Routes>
     <Route path="/auth" element={<AuthRoute />} />
+    <Route path="/forgot-password" element={<ForgotPassword />} />
+    <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/activities" element={<ProtectedRoute><Activities /></ProtectedRoute>} />
     <Route path="/training" element={<ProtectedRoute><Training /></ProtectedRoute>} />

@@ -21,6 +21,7 @@ export type Database = {
           date: string
           duration: number
           id: string
+          is_planned: boolean
           status: string
           title: string
           type: string
@@ -33,6 +34,7 @@ export type Database = {
           date?: string
           duration: number
           id?: string
+          is_planned?: boolean
           status?: string
           title: string
           type: string
@@ -45,11 +47,30 @@ export type Database = {
           date?: string
           duration?: number
           id?: string
+          is_planned?: boolean
           status?: string
           title?: string
           type?: string
           updated_at?: string
           user?: string
+        }
+        Relationships: []
+      }
+      activity_types: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
         }
         Relationships: []
       }
