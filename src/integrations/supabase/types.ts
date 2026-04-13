@@ -207,6 +207,7 @@ export type Database = {
           display_name: string | null
           id: string
           job_role: string | null
+          manager_id: string | null
           updated_at: string
           user_id: string
         }
@@ -216,6 +217,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           job_role?: string | null
+          manager_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -225,10 +227,19 @@ export type Database = {
           display_name?: string | null
           id?: string
           job_role?: string | null
+          manager_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       team_members: {
         Row: {
@@ -337,6 +348,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_view_user: {
+        Args: { _target_id: string; _viewer_id: string }
+        Returns: boolean
+      }
+      get_subordinates: { Args: { _manager_id: string }; Returns: string[] }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
