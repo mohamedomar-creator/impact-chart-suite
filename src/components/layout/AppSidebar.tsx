@@ -1,6 +1,6 @@
 import {
-  LayoutDashboard, Activity, GraduationCap, Clock,
-  Users, Calendar, Lightbulb, BarChart3, FileText, LogOut
+  LayoutDashboard, Activity, Clock,
+  Users, Calendar, Lightbulb, BarChart3, FileText, LogOut, Settings
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -17,10 +17,10 @@ import logo from "@/assets/logo.png";
 const mainNav = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Activity Tracking", url: "/activities", icon: Activity },
-  { title: "Training", url: "/training", icon: GraduationCap },
   { title: "Attendance", url: "/attendance", icon: Clock },
   { title: "Team Performance", url: "/team", icon: Users },
   { title: "Monthly Planning", url: "/planning", icon: Calendar },
+  { title: "Employee Settings", url: "/settings", icon: Settings },
 ];
 
 const secondaryNav = [

@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Activities from "./pages/Activities";
-import Training from "./pages/Training";
+import EmployeeSettings from "./pages/EmployeeSettings";
 import Attendance from "./pages/Attendance";
 import TeamPerformance from "./pages/TeamPerformance";
 import Planning from "./pages/Planning";
@@ -41,7 +41,7 @@ const AppRoutes = () => (
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/activities" element={<ProtectedRoute><Activities /></ProtectedRoute>} />
-    <Route path="/training" element={<ProtectedRoute><Training /></ProtectedRoute>} />
+    <Route path="/settings" element={<ProtectedRoute><EmployeeSettings /></ProtectedRoute>} />
     <Route path="/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
     <Route path="/team" element={<ProtectedRoute><TeamPerformance /></ProtectedRoute>} />
     <Route path="/planning" element={<ProtectedRoute><Planning /></ProtectedRoute>} />
