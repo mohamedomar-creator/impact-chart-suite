@@ -84,10 +84,12 @@ export type Database = {
           date: string
           hours_worked: number | null
           id: string
+          leave_type: string | null
           name: string
           role: string
           status: string
           updated_at: string
+          work_location: string | null
         }
         Insert: {
           avatar?: string
@@ -98,10 +100,12 @@ export type Database = {
           date?: string
           hours_worked?: number | null
           id?: string
+          leave_type?: string | null
           name: string
           role: string
           status?: string
           updated_at?: string
+          work_location?: string | null
         }
         Update: {
           avatar?: string
@@ -112,10 +116,54 @@ export type Database = {
           date?: string
           hours_worked?: number | null
           id?: string
+          leave_type?: string | null
           name?: string
           role?: string
           status?: string
           updated_at?: string
+          work_location?: string | null
+        }
+        Relationships: []
+      }
+      employee_settings: {
+        Row: {
+          break_hours: number
+          created_at: string
+          daily_hours: number
+          employee_name: string
+          id: string
+          is_always_remote: boolean
+          office_days: string[]
+          ramadan_hours: number
+          remote_days: string[]
+          updated_at: string
+          work_type: string
+        }
+        Insert: {
+          break_hours?: number
+          created_at?: string
+          daily_hours?: number
+          employee_name: string
+          id?: string
+          is_always_remote?: boolean
+          office_days?: string[]
+          ramadan_hours?: number
+          remote_days?: string[]
+          updated_at?: string
+          work_type?: string
+        }
+        Update: {
+          break_hours?: number
+          created_at?: string
+          daily_hours?: number
+          employee_name?: string
+          id?: string
+          is_always_remote?: boolean
+          office_days?: string[]
+          ramadan_hours?: number
+          remote_days?: string[]
+          updated_at?: string
+          work_type?: string
         }
         Relationships: []
       }

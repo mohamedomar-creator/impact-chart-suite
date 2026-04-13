@@ -3,71 +3,98 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, Download, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
-import { kpiData, recentActivities, trainingPrograms, teamMembers } from "@/data/mockData";
+import { supabase } from "@/integrations/supabase/client";
+import * as XLSX from "xlsx";
 
-function downloadFile(filename: string, content: string, type: string) {
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+async function fetchTable(table: string) {
+  const { data, error } = await supabase.from(table as any).select("*");
+  if (error) throw error;
+  return data || [];
 }
 
-function generateTrainingSummaryCSV() {
-  const header = "Program,Trainer,Audience,Duration,Enrolled,Completed,Completion Rate,Status";
-  const rows = trainingPrograms.map(p => `${p.name},${p.trainer},${p.audience},${p.duration},${p.enrolled},${p.completed},${p.completionRate}%,${p.status}`);
-  return [header, ...rows].join("\n");
+function downloadXLSX(filename: string, sheetName: string, data: any[]) {
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  XLSX.writeFile(wb, filename);
 }
 
-function generateTeamProductivityCSV() {
-  const header = "Name,Role,Sessions Delivered,Hours Logged,Productivity,Tasks Completed";
-  const rows = teamMembers.map(m => `${m.name},${m.role},${m.sessionsDelivered},${m.hoursLogged},${m.productivity}%,${m.tasksCompleted}`);
-  return [header, ...rows].join("\n");
-}
-
-function generateActivityLogCSV() {
-  const header = "Activity,Type,Team Member,Date,Duration (h),Status";
-  const rows = recentActivities.map(a => `${a.title},${a.type},${a.user},${a.date},${a.duration},${a.status}`);
-  return [header, ...rows].join("\n");
-}
-
-function generateKPISummary() {
-  return `Talent Management KPI Summary\n${"=".repeat(40)}\nTotal Training Hours: ${kpiData.totalTrainingHours}\nSessions Delivered: ${kpiData.sessionsDelivered}\nEmployees Trained: ${kpiData.employeesTrained}\nProductivity Score: ${kpiData.productivityScore}%\nCompletion Rate: ${kpiData.learningCompletionRate}%\nImpact Score: ${kpiData.trainingImpactScore}%\n`;
+async function downloadMultiSheetXLSX(filename: string, sheets: { name: string; table: string }[]) {
+  const wb = XLSX.utils.book_new();
+  for (const s of sheets) {
+    const data = await fetchTable(s.table);
+    const ws = XLSX.utils.json_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, s.name);
+  }
+  XLSX.writeFile(wb, filename);
 }
 
 const reportTypes = [
   {
-    title: "Training Summary Report", description: "Overview of all training programs, completion rates, and impact scores",
-    icon: FileText, format: "CSV",
-    action: () => { downloadFile("training_summary.csv", generateTrainingSummaryCSV(), "text/csv"); toast.success("تم تحميل تقرير التدريب"); }
+    title: "تقرير التدريب الشامل", description: "جميع برامج التدريب مع نسب الإكمال والحالة",
+    icon: FileSpreadsheet, format: "XLSX",
+    action: async () => {
+      try {
+        const data = await fetchTable("training_programs");
+        downloadXLSX("training_programs.xlsx", "Training", data);
+        toast.success("تم تحميل تقرير التدريب");
+      } catch { toast.error("فشل التحميل"); }
+    }
   },
   {
-    title: "Team Productivity Report", description: "Individual and team performance metrics with trend analysis",
-    icon: FileSpreadsheet, format: "CSV",
-    action: () => { downloadFile("team_productivity.csv", generateTeamProductivityCSV(), "text/csv"); toast.success("تم تحميل تقرير الإنتاجية"); }
+    title: "تقرير الأنشطة", description: "جميع الأنشطة مع التمييز بين المخطط والمفاجئ",
+    icon: FileSpreadsheet, format: "XLSX",
+    action: async () => {
+      try {
+        const data = await fetchTable("activities");
+        downloadXLSX("activities.xlsx", "Activities", data);
+        toast.success("تم تحميل تقرير الأنشطة");
+      } catch { toast.error("فشل التحميل"); }
+    }
   },
   {
-    title: "KPI Summary Report", description: "Key performance indicators overview with current scores",
-    icon: FileText, format: "TXT",
-    action: () => { downloadFile("kpi_summary.txt", generateKPISummary(), "text/plain"); toast.success("تم تحميل تقرير المؤشرات"); }
+    title: "تقرير الحضور والانصراف", description: "سجل الحضور والانصراف مع الإجازات وساعات العمل",
+    icon: FileSpreadsheet, format: "XLSX",
+    action: async () => {
+      try {
+        const data = await fetchTable("attendance_records");
+        downloadXLSX("attendance.xlsx", "Attendance", data);
+        toast.success("تم تحميل تقرير الحضور");
+      } catch { toast.error("فشل التحميل"); }
+    }
   },
   {
-    title: "Monthly Activity Log", description: "Detailed log of all activities, hours, and deliverables",
-    icon: FileSpreadsheet, format: "CSV",
-    action: () => { downloadFile("activity_log.csv", generateActivityLogCSV(), "text/csv"); toast.success("تم تحميل سجل الأنشطة"); }
+    title: "تقرير أعضاء الفريق", description: "بيانات الفريق والإنتاجية والمهام المنجزة",
+    icon: FileSpreadsheet, format: "XLSX",
+    action: async () => {
+      try {
+        const data = await fetchTable("team_members");
+        downloadXLSX("team_members.xlsx", "Team", data);
+        toast.success("تم تحميل تقرير الفريق");
+      } catch { toast.error("فشل التحميل"); }
+    }
   },
   {
-    title: "Training Impact Assessment", description: "ROI analysis of training programs with pre/post comparisons",
-    icon: FileText, format: "CSV",
-    action: () => { downloadFile("training_impact.csv", generateTrainingSummaryCSV(), "text/csv"); toast.success("تم تحميل تقرير التأثير"); }
+    title: "التقرير الشامل (كل البيانات)", description: "ملف Excel يحتوي على جميع البيانات في أوراق منفصلة",
+    icon: FileText, format: "XLSX",
+    action: async () => {
+      try {
+        await downloadMultiSheetXLSX("full_report.xlsx", [
+          { name: "Training", table: "training_programs" },
+          { name: "Activities", table: "activities" },
+          { name: "Attendance", table: "attendance_records" },
+          { name: "Team", table: "team_members" },
+          { name: "Plans", table: "monthly_plans" },
+        ]);
+        toast.success("تم تحميل التقرير الشامل");
+      } catch { toast.error("فشل التحميل"); }
+    }
   },
 ];
 
 const Reports = () => {
   return (
-    <DashboardLayout title="Reports" subtitle="Export and download reports">
+    <DashboardLayout title="التقارير" subtitle="تصدير وتحميل التقارير بصيغة Excel">
       <div className="grid gap-4">
         {reportTypes.map((r, i) => (
           <Card key={i} className="hover:shadow-md transition-shadow">
