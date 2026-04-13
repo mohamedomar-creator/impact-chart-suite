@@ -1,6 +1,6 @@
 import {
-  LayoutDashboard, Activity, GraduationCap, Clock,
-  Users, Calendar, Lightbulb, BarChart3, FileText, LogOut
+  LayoutDashboard, Activity, Clock,
+  Users, Calendar, Lightbulb, BarChart3, FileText, LogOut, Settings
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
