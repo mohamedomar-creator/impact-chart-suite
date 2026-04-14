@@ -3,43 +3,48 @@ import { KpiCard } from "@/components/dashboard/KpiCard";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { kpiData, monthlyTrend, activityCategories, recentActivities } from "@/data/mockData";
-import { Clock, Users, Presentation, Target, BookOpen, TrendingUp } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from "recharts";
+import { Activity, Users, Target, Clock, TrendingUp, CalendarCheck } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Area, AreaChart } from "recharts";
 
 const Index = () => {
   return (
-    <DashboardLayout title="Dashboard" subtitle="Talent Management Overview">
+    <DashboardLayout title="لوحة التحكم" subtitle="نظرة عامة على إدارة المواهب">
       <div className="space-y-6">
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <KpiCard title="Training Hours" value={kpiData.totalTrainingHours.toLocaleString()} icon={Clock} trend={{ value: 18, label: "vs last quarter" }} />
-          <KpiCard title="Sessions" value={kpiData.sessionsDelivered} icon={Presentation} trend={{ value: 12, label: "vs last month" }} variant="primary" />
-          <KpiCard title="Employees Trained" value={kpiData.employeesTrained} icon={Users} trend={{ value: 24, label: "vs last quarter" }} />
-          <KpiCard title="Productivity" value={`${kpiData.productivityScore}%`} icon={Target} trend={{ value: 5, label: "vs last month" }} variant="accent" />
-          <KpiCard title="Completion Rate" value={`${kpiData.learningCompletionRate}%`} icon={BookOpen} trend={{ value: 8, label: "vs last quarter" }} />
-          <KpiCard title="Impact Score" value={`${kpiData.trainingImpactScore}%`} icon={TrendingUp} trend={{ value: -2, label: "vs last month" }} />
+          <KpiCard title="إجمالي الأنشطة" value={kpiData.totalActivities} icon={Activity} trend={{ value: 18, label: "vs الربع الماضي" }} />
+          <KpiCard title="أنشطة مخططة" value={kpiData.activitiesPlanned} icon={CalendarCheck} trend={{ value: 12, label: "vs الشهر الماضي" }} variant="primary" />
+          <KpiCard title="أنشطة مفاجئة" value={kpiData.activitiesUnplanned} icon={TrendingUp} trend={{ value: -5, label: "vs الشهر الماضي" }} />
+          <KpiCard title="الإنتاجية" value={`${kpiData.productivityScore}%`} icon={Target} trend={{ value: 5, label: "vs الشهر الماضي" }} variant="accent" />
+          <KpiCard title="نسبة الحضور" value={`${kpiData.attendanceRate}%`} icon={Users} trend={{ value: 3, label: "vs الشهر الماضي" }} />
+          <KpiCard title="متوسط الساعات" value={`${kpiData.avgDailyHours}`} icon={Clock} trend={{ value: 2, label: "vs الشهر الماضي" }} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Training Hours Trend */}
+          {/* Activity Trend */}
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle className="text-base font-heading">Training Hours Trend</CardTitle>
+              <CardTitle className="text-base font-heading">اتجاه الأنشطة والساعات</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={280}>
                 <AreaChart data={monthlyTrend}>
                   <defs>
-                    <linearGradient id="gradHours" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="gradActivities" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="hsl(200, 60%, 30%)" stopOpacity={0.3} />
                       <stop offset="95%" stopColor="hsl(200, 60%, 30%)" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="gradHours" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(38, 92%, 50%)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(38, 92%, 50%)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(200, 20%, 88%)" />
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                   <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip />
-                  <Area type="monotone" dataKey="hours" stroke="hsl(200, 60%, 30%)" fill="url(#gradHours)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="activities" stroke="hsl(200, 60%, 30%)" fill="url(#gradActivities)" strokeWidth={2} name="الأنشطة" />
+                  <Area type="monotone" dataKey="hours" stroke="hsl(38, 92%, 50%)" fill="url(#gradHours)" strokeWidth={2} name="الساعات" />
                 </AreaChart>
               </ResponsiveContainer>
             </CardContent>
@@ -48,7 +53,7 @@ const Index = () => {
           {/* Activity Distribution */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base font-heading">Activity Distribution</CardTitle>
+              <CardTitle className="text-base font-heading">توزيع الأنشطة</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={200}>
@@ -62,7 +67,7 @@ const Index = () => {
                 </PieChart>
               </ResponsiveContainer>
               <div className="space-y-1 mt-2">
-                {activityCategories.slice(0, 4).map((cat) => (
+                {activityCategories.map((cat) => (
                   <div key={cat.name} className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-2 rounded-full" style={{ backgroundColor: cat.color }} />
@@ -79,18 +84,18 @@ const Index = () => {
         {/* Recent Activities */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base font-heading">Recent Activities</CardTitle>
+            <CardTitle className="text-base font-heading">آخر الأنشطة</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-muted-foreground">
-                    <th className="text-left py-3 font-medium">Activity</th>
-                    <th className="text-left py-3 font-medium hidden md:table-cell">Type</th>
-                    <th className="text-left py-3 font-medium hidden sm:table-cell">Team Member</th>
-                    <th className="text-left py-3 font-medium">Duration</th>
-                    <th className="text-left py-3 font-medium">Status</th>
+                    <th className="text-right py-3 font-medium">النشاط</th>
+                    <th className="text-right py-3 font-medium hidden md:table-cell">النوع</th>
+                    <th className="text-right py-3 font-medium hidden sm:table-cell">الموظف</th>
+                    <th className="text-right py-3 font-medium">المدة</th>
+                    <th className="text-right py-3 font-medium">الحالة</th>
                   </tr>
                 </thead>
                 <tbody>
