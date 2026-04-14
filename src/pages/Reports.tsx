@@ -165,7 +165,7 @@ const Reports = () => {
         const allData: any[] = [];
         for (const t of ["activities", "attendance_records", "team_members", "monthly_plans"]) {
           const data = await fetchTable(t);
-          allData.push(...data.map((d: Record<string, unknown>) => ({ ...d, _table: t })));
+          allData.push(...(data as any[]).map((d: any) => ({ ...d, _table: t })));
         }
         generatePDF("التقرير الشامل", allData);
         toast.success("جاري تجهيز التقرير الشامل للطباعة");
