@@ -233,7 +233,6 @@ export default function MonthlySummary() {
     </DashboardLayout>
   );
 }
-  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedYear, setSelectedYear] = useState(String(currentYear));
 
   const yearNum = parseInt(selectedYear);
