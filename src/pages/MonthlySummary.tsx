@@ -1,13 +1,18 @@
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { CalendarCheck, Clock, UserCheck, CalendarOff, Home, Building2 } from "lucide-react";
+import { CalendarCheck, Clock, UserCheck, CalendarOff, Home, Building2, Download, FileText } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { toast } from "sonner";
 
 const months = [
   { value: "01", label: "يناير" }, { value: "02", label: "فبراير" }, { value: "03", label: "مارس" },
@@ -24,7 +29,7 @@ function getWorkingDaysInMonth(year: number, month: number) {
   const daysInMonth = new Date(year, month, 0).getDate();
   for (let d = 1; d <= daysInMonth; d++) {
     const day = new Date(year, month - 1, d).getDay();
-    if (day !== 5) count++; // Friday = 5
+    if (day !== 5) count++;
   }
   return count;
 }
@@ -72,14 +77,13 @@ export default function MonthlySummary() {
     },
   });
 
-  // Build per-employee summary
   const employeeMap = new Map<string, EmployeeSummary>();
   attendance.forEach(r => {
     if (!employeeMap.has(r.name)) {
       const empSetting = settings.find(s => s.employee_name === r.name);
       const dailyH = empSetting?.daily_hours ?? 8;
       employeeMap.set(r.name, {
-        name: r.name, avatar: r.avatar || r.name.split(" ").map(w => w[0]).join("").substring(0,2),
+        name: r.name, avatar: r.avatar || r.name.split(" ").map(w => w[0]).join("").substring(0, 2),
         role: r.role, presentDays: 0, leaveDays: 0, absentDays: 0, remoteDays: 0, officeDays: 0,
         totalHours: 0, expectedHours: workingDays * Number(dailyH), dailyHours: Number(dailyH),
       });
@@ -102,21 +106,69 @@ export default function MonthlySummary() {
   const totalAbsent = summaries.reduce((s, e) => s + e.absentDays, 0);
   const totalHours = summaries.reduce((s, e) => s + e.totalHours, 0);
 
+  const monthLabel = months.find(m => m.value === selectedMonth)?.label || "";
+
+  const exportExcel = () => {
+    if (!summaries.length) { toast.error("لا توجد بيانات للتصدير"); return; }
+    const rows = summaries.map(e => ({
+      "الموظف": e.name, "الدور": e.role, "أيام الحضور": e.presentDays,
+      "مكتب": e.officeDays, "ريموت": e.remoteDays, "إجازات": e.leaveDays,
+      "غياب": e.absentDays, "الساعات": e.totalHours.toFixed(1),
+      "المتوقع": e.expectedHours, "الفرق": (e.totalHours - e.expectedHours).toFixed(1),
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Monthly Summary");
+    XLSX.writeFile(wb, `monthly_summary_${selectedYear}_${selectedMonth}.xlsx`);
+    toast.success("تم تحميل ملف Excel");
+  };
+
+  const exportPDF = () => {
+    if (!summaries.length) { toast.error("لا توجد بيانات للتصدير"); return; }
+    const doc = new jsPDF({ orientation: "landscape" });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text(`Monthly Summary - ${monthLabel} ${selectedYear}`, 14, 15);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Working days: ${workingDays} | Generated: ${new Date().toLocaleDateString()}`, 14, 22);
+
+    autoTable(doc, {
+      startY: 28,
+      head: [["Employee", "Role", "Present", "Office", "Remote", "Leave", "Absent", "Hours", "Expected", "Diff"]],
+      body: summaries.map(e => [
+        e.name, e.role, e.presentDays, e.officeDays, e.remoteDays, e.leaveDays,
+        e.absentDays, e.totalHours.toFixed(1), e.expectedHours, (e.totalHours - e.expectedHours).toFixed(1),
+      ]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [26, 82, 118] },
+    });
+
+    doc.save(`monthly_summary_${selectedYear}_${selectedMonth}.pdf`);
+    toast.success("تم تحميل ملف PDF");
+  };
+
   return (
     <DashboardLayout title="الملخص الشهري" subtitle="ملخص حضور وإجازات وساعات الموظفين">
       <div className="space-y-6">
-        <div className="flex flex-wrap gap-3 items-center">
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
-            <SelectContent>{months.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent>
-          </Select>
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {[currentYear - 1, currentYear, currentYear + 1].map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Badge variant="secondary">{workingDays} يوم عمل في الشهر</Badge>
+        <div className="flex flex-wrap gap-3 items-center justify-between">
+          <div className="flex flex-wrap gap-3 items-center">
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+              <SelectContent>{months.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent>
+            </Select>
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {[currentYear - 1, currentYear, currentYear + 1].map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Badge variant="secondary">{workingDays} يوم عمل في الشهر</Badge>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="gap-2" onClick={exportExcel}><Download className="h-4 w-4" /> Excel</Button>
+            <Button variant="outline" size="sm" className="gap-2" onClick={exportPDF}><FileText className="h-4 w-4" /> PDF</Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
