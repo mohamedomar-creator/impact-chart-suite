@@ -50,12 +50,14 @@ const Activities = () => {
 
   const upsert = useMutation({
     mutationFn: async (vals: typeof form) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("يجب تسجيل الدخول أولاً");
       const record = { title: vals.title, type: vals.type, user: vals.user, duration: parseFloat(vals.duration), date: vals.date, status: "in-progress", is_planned: vals.is_planned };
       if (editItem) {
         const { error } = await supabase.from("activities").update(record).eq("id", editItem.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("activities").insert(record);
+        const { error } = await supabase.from("activities").insert({ ...record, created_by: user.id });
         if (error) throw error;
       }
     },

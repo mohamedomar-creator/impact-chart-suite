@@ -118,6 +118,8 @@ export default function Attendance() {
     mutationFn: async () => {
       const name = selectedEmployee || employeeName;
       if (!name) throw new Error("اختر أو أدخل اسم الموظف");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("يجب تسجيل الدخول أولاً");
       const time = now();
       const isLate = time > "08:15";
       const existing = records.find(r => r.name === name);
@@ -133,6 +135,7 @@ export default function Attendance() {
           name, role: employeeRole || "موظف",
           avatar: name.split(" ").map(w => w[0]).join("").substring(0, 2).toUpperCase(),
           date: today, check_in: time, status, work_location: workLocation,
+          created_by: user.id,
         });
         if (error) throw error;
       }
@@ -180,10 +183,13 @@ export default function Attendance() {
     mutationFn: async () => {
       const name = leaveName;
       if (!name) throw new Error("أدخل اسم الموظف");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("يجب تسجيل الدخول أولاً");
       const { error } = await supabase.from("attendance_records").insert({
         name, role: leaveRole || "موظف",
         avatar: name.split(" ").map(w => w[0]).join("").substring(0, 2).toUpperCase(),
         date: leaveDate, status: "leave", leave_type: leaveType, work_location: null,
+        created_by: user.id,
       });
       if (error) throw error;
       return name;
