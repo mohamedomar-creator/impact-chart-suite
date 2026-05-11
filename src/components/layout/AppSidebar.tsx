@@ -16,6 +16,7 @@ import logo from "@/assets/logo.png";
 
 const mainNav = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Tasks", url: "/tasks", icon: KanbanSquare },
   { title: "Activity Tracking", url: "/activities", icon: Activity },
   { title: "Attendance", url: "/attendance", icon: Clock },
   { title: "Team Performance", url: "/team", icon: Users },
