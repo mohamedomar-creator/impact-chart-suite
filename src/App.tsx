@@ -15,6 +15,7 @@ import Analytics from "./pages/Analytics";
 import Reports from "./pages/Reports";
 import MonthlySummary from "./pages/MonthlySummary";
 import OrgChart from "./pages/OrgChart";
+import Tasks from "./pages/Tasks";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -52,6 +53,7 @@ const AppRoutes = () => (
     <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
     <Route path="/monthly-summary" element={<ProtectedRoute><MonthlySummary /></ProtectedRoute>} />
     <Route path="/org-chart" element={<ProtectedRoute><OrgChart /></ProtectedRoute>} />
+    <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

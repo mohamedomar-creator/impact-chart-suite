@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Activity, Clock,
-  Users, Calendar, Lightbulb, BarChart3, FileText, LogOut, Settings, Network, CalendarCheck
+  Users, Calendar, Lightbulb, BarChart3, FileText, LogOut, Settings, Network, CalendarCheck, KanbanSquare
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -16,6 +16,7 @@ import logo from "@/assets/logo.png";
 
 const mainNav = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Tasks", url: "/tasks", icon: KanbanSquare },
   { title: "Activity Tracking", url: "/activities", icon: Activity },
   { title: "Attendance", url: "/attendance", icon: Clock },
   { title: "Team Performance", url: "/team", icon: Users },
